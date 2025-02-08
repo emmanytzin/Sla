@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloco de Anotações</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        .note {
+            background-color: #222;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        .note-title {
+            font-weight: bold;
+        }
+        .note-date {
+            font-size: 0.8em;
+            color: gray;
+        }
+        .note-text {
+            display: none;
+            margin-top: 5px;
+            color: #ccc;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        input {
+            width: calc(100% - 90px);
+        }
+        button {
+            background-color: #444;
+            color: white;
+            cursor: pointer;
+        }
+        #notes-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Agenda - Nono Ano </h1> <h1> <small> Copright>>>>> Emmanuel</small></h1>
+    
+    <div id="auth-container" class="container">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Usuário">
+        <input type="password" id="password" placeholder="Senha">
+        <button onclick="register()">Registrar</button>
+        <button onclick="login()">Login</button>
+        <input type="text" id="accessCode" placeholder="Código de acesso">
+    </div>
+
+    <div id="notes-container" class="container">
+        <input type="text" id="noteTitle" placeholder="Título da nota">
+        <input type="text" id="noteText" placeholder="Texto da nota">
+        <button onclick="addNote()">Adicionar</button>
+        <button onclick="exportNotes()">Exportar Notas</button>
+        <input type="file" id="importFile" onchange="importNotes(event)">
+        <div id="notes"></div>
+    </div>
+
+    <script>
+        const ACCESS_CODE = "83794283";
+
+        function register() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            if (username.trim() && password.trim()) {
+                localStorage.setItem("user_" + username, JSON.stringify({ username, password }));
+                alert("Conta criada com sucesso!");
+            }
+        }
+
+        function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const accessCode = document.getElementById("accessCode").value;
+            const user = JSON.parse(localStorage.getItem("user_" + username));
+            
+            if (user && user.password === password) {
+                if (accessCode === ACCESS_CODE) {
+                    alert("Login bem-sucedido!");
+                    document.getElementById("auth-container").style.display = "none";
+                    document.getElementById("notes-container").style.display = "block";
+                    loadNotes();
+                } else {
+                    alert("Código de acesso inválido!");
+                }
+            } else {
+                alert("Usuário ou senha incorretos!");
+            }
+        }
+
+        function addNote() {
+            const title = document.getElementById("noteTitle").value;
+            const text = document.getElementById("noteText").value;
+            const date = new Date().toLocaleDateString();
+            
+            if (title.trim() && text.trim()) {
+                const notes = JSON.parse(localStorage.getItem("notes")) || [];
+                notes.unshift({ title, text, date });
+                localStorage.setItem("notes", JSON.stringify(notes));
+                document.getElementById("noteTitle").value = "";
+                document.getElementById("noteText").value = "";
+                loadNotes();
+            }
+        }
+
+        function loadNotes() {
+            const notesDiv = document.getElementById("notes");
+            notesDiv.innerHTML = "";
+            
+            const notes = JSON.parse(localStorage.getItem("notes")) || [];
+            notes.forEach(note => {
+                const noteDiv = document.createElement("div");
+                noteDiv.classList.add("note");
+                noteDiv.innerHTML = `
+                    <p class="note-title">${note.title}</p>
+                    <p class="note-date">${note.date}</p>
+                    <p class="note-text">${note.text}</p>
+                `;
+                noteDiv.addEventListener("click", function() {
+                    const textElement = this.querySelector(".note-text");
+                    textElement.style.display = textElement.style.display === "none" ? "block" : "none";
+                });
+                notesDiv.appendChild(noteDiv);
+            });
+        }
+
+        function exportNotes() {
+            const notes = localStorage.getItem("notes");
+            const blob = new Blob([notes], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "notas.json";
+            a.click();
+        }
+
+        function importNotes(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                localStorage.setItem("notes", e.target.result);
+                loadNotes();
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
